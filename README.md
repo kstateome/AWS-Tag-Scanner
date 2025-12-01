@@ -9,7 +9,7 @@ Service-specific AWS resource tagging compliance scanner and remediation tool fo
 **Upload to CloudShell:**
 1. **`AWSTagScanner.py`** - Scans AWS resources and checks compliance
     * (There are now 5 files for ease of maintenance, though for initial purposes there will still be a comprehensive file)
-2. **`tag_policy_service_specific.json`** - Service-specific tagging requirements ⭐
+2. **`tag_policy_service_specific.json`** - Service-specific tagging requirements
 3. **`tag_remediation.py`** - Generates remediation recommendations
 4. **`README.md`** - This documentation
 
@@ -278,7 +278,7 @@ This tool implements multiple security layers:
 
 ### Security Rating
 
-- **Overall:** 9.5/10 ⭐⭐⭐⭐⭐
+- **Overall:** 9.5/10 
 - **Risk Level:** Very Low
 - **Production Ready:** Yes
 
@@ -288,7 +288,7 @@ For detailed security analysis, see:
 
 ---
 
-## 🆘 Troubleshooting
+##  Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
@@ -395,5 +395,6 @@ aws elbv2 add-tags --resource-arns ARN --tags Key=NAME,Value=VALUE
 ---
 
 **Questions?** Review the Troubleshooting section or re-read the workflow examples above.
+
 
 **Good luck with your AWS tagging compliance project!**
