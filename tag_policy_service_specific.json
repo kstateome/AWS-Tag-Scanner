@@ -1,0 +1,360 @@
+{
+  "tag_policy": {
+    "name": "KSU AWS Tagging Policy - Service-Specific",
+    "version": "1.0",
+    "last_updated": "2025-11-25",
+    "description": "Service-specific tagging requirements - different tags for different AWS services",
+    "workstreams": ["Landing Zone", "Security", "Operations"],
+    
+    "core_tags": {
+      "description": "Core tags required for ALL resources regardless of service type",
+      "tags": [
+        {
+          "key": "Name",
+          "workstream": "Operations",
+          "description": "Resource identifier for console visibility",
+          "allowed_values": null,
+          "case_sensitive": false
+        },
+        {
+          "key": "department",
+          "workstream": "Landing Zone",
+          "description": "Department that owns the resource",
+          "allowed_values": null,
+          "case_sensitive": false
+        },
+        {
+          "key": "environment",
+          "workstream": "Operations",
+          "description": "Deployment environment (dev/test/prod)",
+          "allowed_values": ["dev", "test", "prod"],
+          "case_sensitive": false
+        },
+        {
+          "key": "application",
+          "workstream": "Operations",
+          "description": "Application that the resource supports",
+          "allowed_values": null,
+          "case_sensitive": false
+        }
+      ]
+    },
+    
+    "service_specific_requirements": {
+      "EC2": {
+        "description": "EC2 Instances - Compute resources requiring comprehensive tagging",
+        "required_tags": [
+          "Name",
+          "customer",
+          "department",
+          "environment",
+          "application",
+          "servicescope",
+          "function",
+          "technical-contact",
+          "backup",
+          "critical-list",
+          "criticality",
+          "Patch Group"
+        ],
+        "recommended_tags": [
+          "rebill",
+          "data-priority",
+          "os",
+          "location",
+          "maintenance-window",
+          "Scheduler"
+        ],
+        "notes": "EC2 instances are core compute - require most tags for ops/security"
+      },
+      
+      "RDS": {
+        "description": "RDS Database Instances - Data resources requiring strict security tagging",
+        "required_tags": [
+          "Name",
+          "customer",
+          "department",
+          "environment",
+          "application",
+          "servicescope",
+          "data-priority",
+          "technical-contact",
+          "backup",
+          "critical-list",
+          "criticality"
+        ],
+        "recommended_tags": [
+          "rebill",
+          "data-compliance",
+          "backup-retention",
+          "backup-schedule",
+          "maintenance-window"
+        ],
+        "notes": "RDS stores data - security and backup tags are critical. No Patch Group (AWS managed)"
+      },
+      
+      "S3": {
+        "description": "S3 Buckets - Storage resources with lighter requirements",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application",
+          "data-priority"
+        ],
+        "recommended_tags": [
+          "customer",
+          "servicescope",
+          "technical-contact",
+          "data-compliance",
+          "backup",
+          "rebill"
+        ],
+        "notes": "S3 buckets are storage - fewer operational tags needed. Focus on data classification."
+      },
+      
+      "Lambda": {
+        "description": "Lambda Functions - Serverless compute with minimal ops overhead",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application",
+          "function"
+        ],
+        "recommended_tags": [
+          "customer",
+          "servicescope",
+          "technical-contact",
+          "criticality"
+        ],
+        "notes": "Lambda is serverless - no patching/backup needed. Focus on identification tags."
+      },
+      
+      "ELB": {
+        "description": "Elastic Load Balancers - Network resources",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application",
+          "wafv2"
+        ],
+        "recommended_tags": [
+          "customer",
+          "servicescope",
+          "technical-contact",
+          "critical-list",
+          "criticality"
+        ],
+        "notes": "Load balancers are entry points - WAF and identification tags are key. No patching/backup."
+      },
+      
+      "EBS": {
+        "description": "EBS Volumes - Block storage attached to EC2",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application",
+          "backup"
+        ],
+        "recommended_tags": [
+          "customer",
+          "backup-retention",
+          "backup-schedule",
+          "data-priority"
+        ],
+        "notes": "EBS volumes inherit most context from EC2. Focus on backup tags."
+      }
+    },
+    
+    "all_tags_reference": {
+      "description": "Complete list of all possible tags with descriptions",
+      "tags": [
+        {
+          "key": "Name",
+          "description": "Resource identifier",
+          "applies_to": ["All services"]
+        },
+        {
+          "key": "customer",
+          "description": "Customer/consumer of the resource",
+          "applies_to": ["EC2", "RDS"]
+        },
+        {
+          "key": "department",
+          "description": "Owning department",
+          "applies_to": ["All services"]
+        },
+        {
+          "key": "environment",
+          "description": "Deployment environment (dev/test/prod)",
+          "applies_to": ["All services"]
+        },
+        {
+          "key": "application",
+          "description": "Application name",
+          "applies_to": ["All services"]
+        },
+        {
+          "key": "servicescope",
+          "description": "Impact boundary (Dept-Internal/ITS-Internal/University-Wide)",
+          "applies_to": ["EC2", "RDS"]
+        },
+        {
+          "key": "rebill",
+          "description": "Chargeback indicator (Y/N)",
+          "applies_to": ["EC2", "RDS", "S3"]
+        },
+        {
+          "key": "function",
+          "description": "Server role (web/app/db/etc)",
+          "applies_to": ["EC2", "Lambda"]
+        },
+        {
+          "key": "data-priority",
+          "description": "Data classification (public/non-sensitive/pii)",
+          "applies_to": ["RDS", "S3", "EBS"]
+        },
+        {
+          "key": "technical-contact",
+          "description": "Incident notification contact",
+          "applies_to": ["EC2", "RDS", "ELB"]
+        },
+        {
+          "key": "wafv2",
+          "description": "WAF rules (exclude-all/php/windows/default)",
+          "applies_to": ["ELB"]
+        },
+        {
+          "key": "backup",
+          "description": "Backup indicator (Yes/No)",
+          "applies_to": ["EC2", "RDS", "EBS"]
+        },
+        {
+          "key": "critical-list",
+          "description": "K-State critical resources (Y/N)",
+          "applies_to": ["EC2", "RDS", "ELB"]
+        },
+        {
+          "key": "criticality",
+          "description": "DR tier (0-3)",
+          "applies_to": ["EC2", "RDS", "Lambda", "ELB"]
+        },
+        {
+          "key": "Patch Group",
+          "description": "AWS Systems Manager patch group",
+          "applies_to": ["EC2"]
+        },
+        {
+          "key": "os",
+          "description": "Operating system",
+          "applies_to": ["EC2"]
+        },
+        {
+          "key": "location",
+          "description": "AWS account type",
+          "applies_to": ["EC2"]
+        },
+        {
+          "key": "Scheduler",
+          "description": "Auto power management",
+          "applies_to": ["EC2"]
+        },
+        {
+          "key": "data-compliance",
+          "description": "Compliance type (hipaa/pcidss/nist171)",
+          "applies_to": ["RDS", "S3"]
+        },
+        {
+          "key": "backup-retention",
+          "description": "Backup retention in days",
+          "applies_to": ["RDS", "EBS"]
+        },
+        {
+          "key": "backup-schedule",
+          "description": "Backup schedule",
+          "applies_to": ["RDS", "EBS"]
+        },
+        {
+          "key": "maintenance-window",
+          "description": "Maintenance window for updates",
+          "applies_to": ["EC2", "RDS"]
+        }
+      ]
+    },
+    
+    "tag_aliases": {
+      "env": "environment",
+      "Env": "environment",
+      "Environment": "environment",
+      "EnvType": "environment",
+      "Customer": "customer",
+      "Department": "department",
+      "dept": "department",
+      "Dept": "department",
+      "Application": "application",
+      "app": "application",
+      "App": "application",
+      "Service": "application",
+      "technical_contact": "technical-contact",
+      "TechnicalContact": "technical-contact",
+      "tech-contact": "technical-contact",
+      "data_priority": "data-priority",
+      "DataPriority": "data-priority",
+      "service_scope": "servicescope",
+      "ServiceScope": "servicescope",
+      "service-scope": "servicescope",
+      "Rebill": "rebill",
+      "ReBill": "rebill",
+      "Function": "function",
+      "ServerRole": "function",
+      "Role": "function",
+      "Backup": "backup",
+      "BackupEnabled": "backup",
+      "critical_list": "critical-list",
+      "CriticalList": "critical-list",
+      "Criticality": "criticality",
+      "patch_group": "Patch Group",
+      "PatchGroup": "Patch Group",
+      "patch-group": "Patch Group",
+      "scheduler": "Scheduler",
+      "Schedule": "Scheduler",
+      "Owner": "owner",
+      "OS": "os",
+      "OperatingSystem": "os",
+      "waf-exclude": "wafv2",
+      "WAFv2": "wafv2",
+      "MaintenanceWindow": "maintenance-window",
+      "maintenance_window": "maintenance-window",
+      "Client": "customer",
+      "pillar": "servicescope"
+    },
+    
+    "comparison_table": {
+      "description": "Quick reference showing tag requirements by service",
+      "tags": [
+        {"tag": "Name", "EC2": "required", "RDS": "required", "S3": "required", "Lambda": "required", "ELB": "required", "EBS": "required"},
+        {"tag": "customer", "EC2": "required", "RDS": "required", "S3": "recommended", "Lambda": "recommended", "ELB": "recommended", "EBS": "recommended"},
+        {"tag": "department", "EC2": "required", "RDS": "required", "S3": "required", "Lambda": "required", "ELB": "required", "EBS": "required"},
+        {"tag": "environment", "EC2": "required", "RDS": "required", "S3": "required", "Lambda": "required", "ELB": "required", "EBS": "required"},
+        {"tag": "application", "EC2": "required", "RDS": "required", "S3": "required", "Lambda": "required", "ELB": "required", "EBS": "required"},
+        {"tag": "servicescope", "EC2": "required", "RDS": "required", "S3": "recommended", "Lambda": "recommended", "ELB": "recommended", "EBS": "recommended"},
+        {"tag": "function", "EC2": "required", "RDS": "not-applicable", "S3": "not-applicable", "Lambda": "required", "ELB": "not-applicable", "EBS": "not-applicable"},
+        {"tag": "data-priority", "EC2": "recommended", "RDS": "required", "S3": "required", "Lambda": "not-applicable", "ELB": "not-applicable", "EBS": "recommended"},
+        {"tag": "technical-contact", "EC2": "required", "RDS": "required", "S3": "recommended", "Lambda": "recommended", "ELB": "recommended", "EBS": "recommended"},
+        {"tag": "wafv2", "EC2": "not-applicable", "RDS": "not-applicable", "S3": "not-applicable", "Lambda": "not-applicable", "ELB": "required", "EBS": "not-applicable"},
+        {"tag": "backup", "EC2": "required", "RDS": "required", "S3": "recommended", "Lambda": "not-applicable", "ELB": "not-applicable", "EBS": "required"},
+        {"tag": "critical-list", "EC2": "required", "RDS": "required", "S3": "not-applicable", "Lambda": "not-applicable", "ELB": "recommended", "EBS": "not-applicable"},
+        {"tag": "criticality", "EC2": "required", "RDS": "required", "S3": "not-applicable", "Lambda": "recommended", "ELB": "recommended", "EBS": "not-applicable"},
+        {"tag": "Patch Group", "EC2": "required", "RDS": "not-applicable", "S3": "not-applicable", "Lambda": "not-applicable", "ELB": "not-applicable", "EBS": "not-applicable"}
+      ],
+      "legend": {
+        "required": "Required",
+        "recommended": "Recommended",
+        "not-applicable": "Not applicable"
+      }
+    }
+  }
+}
