@@ -150,7 +150,7 @@ S3,bucket,my-bucket,my-bucket,available,data-priority,non-sensitive,Default: non
 - **ResourceName** - Human-readable name (from Name tag)
 - **State** - Resource state (running, available, active)
 - **TagName** - Tag key that is MISSING and needs to be added
-- **RecommendedValue** - Suggested value (⚠️ review before applying!)
+- **RecommendedValue** - Suggested value (review before applying!)
 - **Logic** - Why this value was recommended
 - **ExistingTagCount** - How many tags the resource currently has
 - **MissingTagCount** - How many tags are missing total
@@ -249,7 +249,7 @@ This tool implements multiple security layers:
    - Uses AWS SDK credential chain (IAM roles, profiles)
    - Graceful permission error handling
 
-### ⚠️ Security Warnings
+### Security Warnings
 
 **Before running AWS CLI commands from CSV files:**
 
@@ -398,4 +398,5 @@ aws elbv2 add-tags --resource-arns ARN --tags Key=NAME,Value=VALUE
 
 
 **Good luck with your AWS tagging compliance project!**
+
 
