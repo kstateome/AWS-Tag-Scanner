@@ -202,8 +202,66 @@ class ResourceExporter:
     # EXCEL EXPORT
     # ========================================================================
     
+    def _get_required_tags_for_service(self, service_type: str) -> List[str]:
+        """Get list of required tags for a service type"""
+        if not self.tag_policy:
+            return []
+        
+        core_tags = self.tag_policy.get('core_tags', {}).get('tags', [])
+        required = [tag['key'] for tag in core_tags]
+        
+        service_reqs = self.tag_policy.get('service_specific_requirements', {}).get(service_type, {})
+        if service_reqs:
+            required.extend(service_reqs.get('required_tags', []))
+        
+        return required
+    
+    def _get_recommended_tags_for_service(self, service_type: str) -> List[str]:
+        """Get list of recommended tags for a service type"""
+        if not self.tag_policy:
+            return []
+        
+        service_reqs = self.tag_policy.get('service_specific_requirements', {}).get(service_type, {})
+        if service_reqs:
+            return service_reqs.get('recommended_tags', [])
+        
+        return []
+    
+    def _write_sheet_with_auto_width(self, ws, headers: List[str], data_rows: List[List[Any]]) -> None:
+        """Write headers and data to sheet with auto-width columns"""
+        # Write header
+        for c_idx, h in enumerate(headers, start=1):
+            cell = ws.cell(row=1, column=c_idx, value=h)
+            cell.font = cell.font.copy(bold=True)
+        
+        # Write rows
+        for r_idx, row in enumerate(data_rows, start=2):
+            for c_idx, val in enumerate(row, start=1):
+                cell_val = '' if val is None else str(val)
+                ws.cell(row=r_idx, column=c_idx, value=cell_val)
+        
+        # Auto-width columns
+        for i, _ in enumerate(headers, start=1):
+            col = get_column_letter(i)
+            max_len = 0
+            for cell in ws[col]:
+                if cell.value:
+                    try:
+                        l = len(str(cell.value))
+                    except Exception:
+                        l = 0
+                    if l > max_len:
+                        max_len = l
+            ws.column_dimensions[col].width = min(max(10, max_len + 2), 60)
+    
     def export_to_excel(self, resources: List[Dict[str, Any]], filename: Optional[str] = None) -> str:
-        """Export resources into an Excel workbook with one sheet per service type"""
+        """
+        Export resources into an Excel workbook with separate sheets per service.
+        Each service sheet contains three sections:
+        1. Required Tags - Shows required tags with 'MISSING' for absent ones
+        2. Recommended Tags - Shows recommended tags with 'MISSING' for absent ones
+        3. Current Tags - Shows all actual tags on resources
+        """
         # validate/sanitize filename
         if filename:
             try:
@@ -228,45 +286,167 @@ class ResourceExporter:
         default = wb.active
         wb.remove(default)
 
+        # Create sheets per service with Required/Recommended/Current sections
         for service, items in sorted(by_service.items()):
-            ws = wb.create_sheet(title=service[:31])
-
-            # Collect tag columns specific to this service
-            tag_cols = self._collect_tag_columns(items)
-            headers = self._build_csv_headers(tag_cols)
-
-            # Write header
-            for c_idx, h in enumerate(headers, start=1):
-                ws.cell(row=1, column=c_idx, value=h)
-
-            # Write rows
-            for r_idx, resource in enumerate(items, start=2):
-                row = self._build_csv_row(resource, tag_cols)
-                for c_idx, val in enumerate(row, start=1):
-                    # Ensure strings for Excel cells
-                    if val is None:
-                        cell_val = ''
-                    else:
-                        cell_val = str(val)
-                    ws.cell(row=r_idx, column=c_idx, value=cell_val)
-
-            # Auto-width columns (simple heuristic)
-            for i, _ in enumerate(headers, start=1):
-                col = get_column_letter(i)
-                max_len = 0
-                for cell in ws[col]:
-                    if cell.value:
-                        try:
-                            l = len(str(cell.value))
-                        except Exception:
-                            l = 0
-                        if l > max_len:
-                            max_len = l
-                ws.column_dimensions[col].width = min(max(10, max_len + 2), 60)
+            # Create three sub-sheets per service
+            self._create_required_tags_sheet(wb, items, f"{service}-Required")
+            self._create_recommended_tags_sheet(wb, items, f"{service}-Recommended")
+            self._create_current_tags_sheet(wb, items, f"{service}-Current")
 
         wb.save(filename)
         self.logger.info(f"[XLSX] Report exported to: {filename}")
+        self.logger.info(f"[XLSX]   Created {len(by_service)} services with 3 sheets each (Required/Recommended/Current)")
+        for service in sorted(by_service.keys()):
+            self.logger.info(f"[XLSX]   - {service}: {len(by_service[service])} resources")
         return filename
+    
+    def _create_required_tags_sheet(self, wb: Workbook, resources: List[Dict[str, Any]], sheet_name: str = "Required Tags") -> None:
+        """Create sheet showing required tags with MISSING markers"""
+        ws = wb.create_sheet(title=sheet_name[:31])
+        
+        # Collect all required tag columns across all resources
+        required_tags_set = set()
+        for resource in resources:
+            if 'Compliance' in resource:
+                service_type = resource['Compliance'].get('service_type', 'other')
+                required_tags_set.update(self._get_required_tags_for_service(service_type))
+        
+        required_tags = sorted(required_tags_set)
+        
+        # Build headers
+        headers = ['Service', 'ResourceType', 'ResourceId', 'ResourceName', 'State']
+        headers.extend(required_tags)
+        if self.tag_policy:
+            headers.extend(['RequiredCount', 'PresentCount', 'MissingCount', 'ComplianceScore'])
+        
+        # Build data rows
+        data_rows = []
+        for resource in resources:
+            normalized_tags = {self.report_builder.normalize_tag_key(k): v 
+                             for k, v in resource.get('Tags', {}).items()}
+            
+            row = [
+                resource.get('Service', ''),
+                resource.get('ResourceType', ''),
+                resource.get('ResourceId', ''),
+                resource.get('ResourceName', ''),
+                resource.get('State', '')
+            ]
+            
+            # Add required tag values or MISSING
+            service_type = resource.get('Compliance', {}).get('service_type', 'other') if 'Compliance' in resource else 'other'
+            resource_required = self._get_required_tags_for_service(service_type)
+            
+            missing_count = 0
+            present_count = 0
+            
+            for tag_key in required_tags:
+                if tag_key in resource_required:
+                    value = normalized_tags.get(tag_key, '')
+                    if value:
+                        row.append(value)
+                        present_count += 1
+                    else:
+                        row.append('MISSING')
+                        missing_count += 1
+                else:
+                    # Not required for this service
+                    row.append('N/A')
+            
+            # Add summary columns
+            if self.tag_policy:
+                total_required = len(resource_required)
+                row.append(total_required)
+                row.append(present_count)
+                row.append(missing_count)
+                compliance = (present_count / total_required * 100) if total_required > 0 else 100.0
+                row.append(f"{compliance:.1f}%")
+            
+            data_rows.append(row)
+        
+        self._write_sheet_with_auto_width(ws, headers, data_rows)
+    
+    def _create_recommended_tags_sheet(self, wb: Workbook, resources: List[Dict[str, Any]], sheet_name: str = "Recommended Tags") -> None:
+        """Create sheet showing recommended tags with MISSING markers"""
+        ws = wb.create_sheet(title=sheet_name[:31])
+        
+        # Collect all recommended tag columns across all resources
+        recommended_tags_set = set()
+        for resource in resources:
+            if 'Compliance' in resource:
+                service_type = resource['Compliance'].get('service_type', 'other')
+                recommended_tags_set.update(self._get_recommended_tags_for_service(service_type))
+        
+        recommended_tags = sorted(recommended_tags_set)
+        
+        # Build headers
+        headers = ['Service', 'ResourceType', 'ResourceId', 'ResourceName', 'State']
+        headers.extend(recommended_tags)
+        if self.tag_policy:
+            headers.extend(['RecommendedCount', 'PresentCount', 'MissingCount', 'Coverage'])
+        
+        # Build data rows
+        data_rows = []
+        for resource in resources:
+            normalized_tags = {self.report_builder.normalize_tag_key(k): v 
+                             for k, v in resource.get('Tags', {}).items()}
+            
+            row = [
+                resource.get('Service', ''),
+                resource.get('ResourceType', ''),
+                resource.get('ResourceId', ''),
+                resource.get('ResourceName', ''),
+                resource.get('State', '')
+            ]
+            
+            # Add recommended tag values or MISSING
+            service_type = resource.get('Compliance', {}).get('service_type', 'other') if 'Compliance' in resource else 'other'
+            resource_recommended = self._get_recommended_tags_for_service(service_type)
+            
+            missing_count = 0
+            present_count = 0
+            
+            for tag_key in recommended_tags:
+                if tag_key in resource_recommended:
+                    value = normalized_tags.get(tag_key, '')
+                    if value:
+                        row.append(value)
+                        present_count += 1
+                    else:
+                        row.append('MISSING')
+                        missing_count += 1
+                else:
+                    # Not recommended for this service
+                    row.append('N/A')
+            
+            # Add summary columns
+            if self.tag_policy:
+                total_recommended = len(resource_recommended)
+                row.append(total_recommended)
+                row.append(present_count)
+                row.append(missing_count)
+                coverage = (present_count / total_recommended * 100) if total_recommended > 0 else 100.0
+                row.append(f"{coverage:.1f}%")
+            
+            data_rows.append(row)
+        
+        self._write_sheet_with_auto_width(ws, headers, data_rows)
+    
+    def _create_current_tags_sheet(self, wb: Workbook, resources: List[Dict[str, Any]], sheet_name: str = "Current Tags") -> None:
+        """Create sheet showing all current tags (original behavior)"""
+        ws = wb.create_sheet(title=sheet_name[:31])
+        
+        # Collect all tag columns
+        tag_cols = self._collect_tag_columns(resources)
+        headers = self._build_csv_headers(tag_cols)
+        
+        # Build data rows
+        data_rows = []
+        for resource in resources:
+            row = self._build_csv_row(resource, tag_cols)
+            data_rows.append(row)
+        
+        self._write_sheet_with_auto_width(ws, headers, data_rows)
     
     # ========================================================================
     # CONSOLE OUTPUT

@@ -18,6 +18,7 @@ import logging
 from aws_scanner import AWSTagScanner
 from report_builder import ReportBuilder
 from exporters import ResourceExporter
+from remediation_analyzer import RemediationAnalyzer
 
 
 def main() -> None:
@@ -34,6 +35,11 @@ def main() -> None:
     parser.add_argument('--policy', help='Path to tag policy JSON file for compliance checking')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose (debug) logging')
     parser.add_argument('--quiet', action='store_true', help='Quiet mode (only warnings and errors)')
+    parser.add_argument('--remediation', action='store_true', 
+                       help='Generate remediation recommendations for missing tags')
+    parser.add_argument('--categories', nargs='+', 
+                       choices=['compute', 'storage', 'database', 'network', 'application'],
+                       help='Scanner categories to enable (default: all). Options: compute, storage, database, network, application')
     
     args = parser.parse_args()
     
@@ -52,7 +58,8 @@ def main() -> None:
         scanner = AWSTagScanner(
             profile=args.profile, 
             region=args.region, 
-            dry_run=args.dry_run
+            dry_run=args.dry_run,
+            scanner_categories=args.categories  # Pass selected categories
         )
         
         if args.dry_run:
@@ -99,6 +106,35 @@ def main() -> None:
                 excel_name = f"{base}.xlsx"
 
             exporter.export_to_excel(resources, excel_name)
+        
+        # Generate remediation recommendations if requested
+        if args.remediation:
+            print("\n" + "=" * 80)
+            print("GENERATING REMEDIATION RECOMMENDATIONS")
+            print("=" * 80)
+            
+            # Initialize remediation analyzer with policy
+            remediation_analyzer = RemediationAnalyzer(
+                policy=report_builder.tag_policy if args.policy else None
+            )
+            
+            # Analyze resources and generate plan
+            remediation_analyzer.analyze_resources(resources)
+            
+            # Print summary
+            remediation_analyzer.print_summary()
+            
+            # Export remediation plan
+            base_filename = args.filename if args.filename else "remediation_plan"
+            remediation_csv = f"{base_filename}_remediation.csv"
+            remediation_json = f"{base_filename}_remediation.json"
+            
+            remediation_analyzer.export_to_csv(remediation_csv)
+            remediation_analyzer.export_to_json(remediation_json)
+            
+            print(f"\n[OK] Remediation recommendations exported:")
+            print(f"   • {remediation_csv}")
+            print(f"   • {remediation_json}")
         
     except KeyboardInterrupt:
         print("\n[ERROR] Scan cancelled by user")

@@ -1,0 +1,697 @@
+{
+  "tag_policy": {
+    "name": "KSU AWS Tagging Policy - Comprehensive Service-Specific",
+    "version": "1.0",
+    "last_updated": "2025-12-02",
+    "description": "Comprehensive service-specific tagging requirements for all major AWS services with intelligent defaults and alias mappings",
+    "workstreams": ["Landing Zone", "Security", "Operations"],
+
+    "naming_conventions": {
+      "key_style": "kebab-case or snake_case",
+      "key_case": "case-insensitive (normalized automatically)",
+      "value_case": "lowercase_for_enums",
+      "max_tags_per_resource": 50,
+      "restricted_prefixes": ["aws:"],
+      "allowed_characters": "letters, numbers, spaces, and + - = . _ : / @"
+    },
+
+    "core_tags": {
+      "description": "Core tags required for ALL resources regardless of service type",
+      "tags": [
+        {
+          "key": "Name",
+          "workstream": "Operations",
+          "description": "Resource identifier for console visibility",
+          "allowed_values": null,
+          "case_sensitive": false
+        },
+        {
+          "key": "department",
+          "workstream": "Landing Zone",
+          "description": "Department that owns the resource",
+          "allowed_values": null,
+          "case_sensitive": false
+        },
+        {
+          "key": "environment",
+          "workstream": "Operations",
+          "description": "Deployment environment (dev/test/prod)",
+          "allowed_values": ["dev", "test", "prod"],
+          "case_sensitive": false
+        },
+        {
+          "key": "application",
+          "workstream": "Operations",
+          "description": "Application that the resource supports",
+          "allowed_values": null,
+          "case_sensitive": false
+        }
+      ]
+    },
+
+    "service_specific_requirements": {
+      "ec2": {
+        "description": "EC2 Instances - Compute resources requiring comprehensive tagging",
+        "required_tags": [
+          "Name",
+          "customer",
+          "department",
+          "environment",
+          "application",
+          "servicescope",
+          "function",
+          "technical-contact",
+          "backup",
+          "critical-list",
+          "criticality",
+          "Patch Group"
+        ],
+        "recommended_tags": [
+          "rebill",
+          "data-priority",
+          "os",
+          "location",
+          "maintenance-window",
+          "Scheduler"
+        ],
+        "notes": "EC2 instances are core compute - require most tags for ops/security"
+      },
+
+      "ebs": {
+        "description": "EBS Volumes - Block storage attached to EC2",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application",
+          "backup"
+        ],
+        "recommended_tags": [
+          "customer",
+          "backup-retention",
+          "backup-schedule",
+          "data-priority"
+        ],
+        "notes": "EBS volumes inherit most context from EC2. Focus on backup tags."
+      },
+
+      "rds": {
+        "description": "RDS Database Instances - Data resources requiring strict security tagging",
+        "required_tags": [
+          "Name",
+          "customer",
+          "department",
+          "environment",
+          "application",
+          "servicescope",
+          "data-priority",
+          "technical-contact",
+          "backup",
+          "critical-list",
+          "criticality"
+        ],
+        "recommended_tags": [
+          "rebill",
+          "data-compliance",
+          "backup-retention",
+          "backup-schedule",
+          "maintenance-window"
+        ],
+        "notes": "RDS stores data - security and backup tags are critical. No Patch Group (AWS managed)"
+      },
+
+      "s3": {
+        "description": "S3 Buckets - Storage resources with data classification focus",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application",
+          "data-priority"
+        ],
+        "recommended_tags": [
+          "customer",
+          "servicescope",
+          "technical-contact",
+          "data-compliance",
+          "backup",
+          "rebill"
+        ],
+        "notes": "S3 buckets are storage - fewer operational tags needed. Focus on data classification."
+      },
+
+      "lambda": {
+        "description": "Lambda Functions - Serverless compute with minimal ops overhead",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application",
+          "function"
+        ],
+        "recommended_tags": [
+          "customer",
+          "servicescope",
+          "technical-contact",
+          "criticality"
+        ],
+        "notes": "Lambda is serverless - no patching/backup needed. Focus on identification tags."
+      },
+
+      "elb": {
+        "description": "Elastic Load Balancers (ALB/NLB/CLB) - Network resources",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application",
+          "wafv2"
+        ],
+        "recommended_tags": [
+          "customer",
+          "servicescope",
+          "technical-contact",
+          "critical-list",
+          "criticality"
+        ],
+        "notes": "Load balancers are entry points - WAF and identification tags are key"
+      },
+
+      "vpc": {
+        "description": "VPC and networking resources (VPC, Subnets, Route Tables, IGW, NAT)",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "servicescope",
+          "technical-contact",
+          "location"
+        ],
+        "notes": "Network infrastructure - minimal tags needed, mostly for organization"
+      },
+
+      "securitygroup": {
+        "description": "Security Groups - Firewall rules",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "function",
+          "technical-contact"
+        ],
+        "notes": "Security groups should be tagged for audit and compliance tracking"
+      },
+
+      "iam": {
+        "description": "IAM Roles and Policies - Identity and access management",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "function",
+          "technical-contact",
+          "servicescope"
+        ],
+        "notes": "IAM resources for access tracking and compliance"
+      },
+
+      "dynamodb": {
+        "description": "DynamoDB Tables - NoSQL database service",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application",
+          "data-priority"
+        ],
+        "recommended_tags": [
+          "customer",
+          "servicescope",
+          "technical-contact",
+          "backup",
+          "criticality",
+          "data-compliance"
+        ],
+        "notes": "DynamoDB stores data - security tags are important"
+      },
+
+      "cloudwatch": {
+        "description": "CloudWatch Log Groups and Alarms - Monitoring resources",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "technical-contact",
+          "retention-days"
+        ],
+        "notes": "Monitoring resources - minimal tagging, focus on identification"
+      },
+
+      "sns": {
+        "description": "SNS Topics - Notification service",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "technical-contact",
+          "criticality"
+        ],
+        "notes": "Messaging infrastructure"
+      },
+
+      "sqs": {
+        "description": "SQS Queues - Message queuing service",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "technical-contact",
+          "criticality"
+        ],
+        "notes": "Messaging infrastructure"
+      },
+
+      "ecs": {
+        "description": "ECS Clusters and Services - Container orchestration",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application",
+          "function"
+        ],
+        "recommended_tags": [
+          "customer",
+          "servicescope",
+          "technical-contact",
+          "criticality"
+        ],
+        "notes": "Container services - similar to EC2 but serverless"
+      },
+
+      "eks": {
+        "description": "EKS Clusters - Kubernetes service",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "customer",
+          "servicescope",
+          "technical-contact",
+          "criticality",
+          "backup"
+        ],
+        "notes": "Kubernetes clusters - critical infrastructure"
+      },
+
+      "cloudfront": {
+        "description": "CloudFront Distributions - CDN service",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application",
+          "wafv2"
+        ],
+        "recommended_tags": [
+          "customer",
+          "servicescope",
+          "technical-contact"
+        ],
+        "notes": "CDN distributions - WAF integration important"
+      },
+
+      "route53": {
+        "description": "Route53 Hosted Zones - DNS service",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "technical-contact",
+          "servicescope"
+        ],
+        "notes": "DNS zones - critical infrastructure"
+      },
+
+      "elasticip": {
+        "description": "Elastic IP Addresses - Static IPs",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "technical-contact",
+          "function"
+        ],
+        "notes": "Static IPs should be tagged to track usage and avoid waste"
+      },
+
+      "natgateway": {
+        "description": "NAT Gateways - Network address translation",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "technical-contact",
+          "location"
+        ],
+        "notes": "NAT gateways are costly - tag for cost tracking"
+      },
+
+      "vpn": {
+        "description": "VPN Connections and Virtual Gateways",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "technical-contact",
+          "critical-list"
+        ],
+        "notes": "VPN connections for network connectivity"
+      },
+
+      "apigateway": {
+        "description": "API Gateway - REST/HTTP APIs",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "technical-contact",
+          "wafv2",
+          "criticality"
+        ],
+        "notes": "API endpoints - security and identification important"
+      },
+
+      "kms": {
+        "description": "KMS Keys - Encryption keys",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "technical-contact",
+          "data-priority",
+          "data-compliance"
+        ],
+        "notes": "Encryption keys for security and compliance"
+      },
+
+      "secretsmanager": {
+        "description": "Secrets Manager - Secret storage",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "technical-contact",
+          "data-priority"
+        ],
+        "notes": "Secrets storage for security"
+      },
+
+      "ecr": {
+        "description": "ECR Repositories - Container image registry",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "technical-contact"
+        ],
+        "notes": "Container image repositories"
+      },
+
+      "elasticache": {
+        "description": "ElastiCache Clusters - Redis/Memcached",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "customer",
+          "servicescope",
+          "technical-contact",
+          "backup",
+          "criticality"
+        ],
+        "notes": "Caching infrastructure"
+      },
+
+      "other": {
+        "description": "Default for unrecognized service types",
+        "required_tags": [
+          "Name",
+          "department",
+          "environment",
+          "application"
+        ],
+        "recommended_tags": [
+          "technical-contact"
+        ],
+        "notes": "Minimal tagging for services not explicitly defined"
+      }
+    },
+
+    "all_tags_reference": {
+      "description": "Complete list of all possible tags with descriptions and allowed values",
+      "tags": [
+        {
+          "key": "Name",
+          "description": "Resource identifier for console visibility",
+          "allowed_values": null,
+          "applies_to": ["all"]
+        },
+        {
+          "key": "customer",
+          "description": "Customer/consumer of the resource",
+          "allowed_values": null,
+          "applies_to": ["ec2", "rds", "s3", "lambda", "elb", "dynamodb", "ecs", "eks", "elasticache"]
+        },
+        {
+          "key": "department",
+          "description": "Owning department",
+          "allowed_values": null,
+          "applies_to": ["all"]
+        },
+        {
+          "key": "environment",
+          "description": "Deployment environment",
+          "allowed_values": ["dev", "test", "prod"],
+          "applies_to": ["all"]
+        },
+        {
+          "key": "application",
+          "description": "Application name or identifier",
+          "allowed_values": null,
+          "applies_to": ["all"]
+        },
+        {
+          "key": "servicescope",
+          "description": "Impact boundary of service",
+          "allowed_values": ["Dept-Internal", "ITS-Internal", "University-Wide"],
+          "applies_to": ["ec2", "rds", "s3", "lambda", "elb", "ecs", "eks"]
+        },
+        {
+          "key": "rebill",
+          "description": "Chargeback indicator",
+          "allowed_values": ["Y", "N"],
+          "applies_to": ["ec2", "rds", "s3", "ebs"]
+        },
+        {
+          "key": "function",
+          "description": "Server/application role",
+          "allowed_values": ["web", "app", "db", "dc", "file", "print", "dns", "messaging", "terminal", "management", "cyber", "pki", "virtualization", "sftp"],
+          "applies_to": ["ec2", "lambda", "ecs", "securitygroup"]
+        },
+        {
+          "key": "data-priority",
+          "description": "Data classification level",
+          "allowed_values": ["public", "non-sensitive", "pii"],
+          "applies_to": ["rds", "s3", "ebs", "dynamodb", "kms", "secretsmanager"]
+        },
+        {
+          "key": "data-compliance",
+          "description": "Compliance classification",
+          "allowed_values": ["hipaa", "pcidss", "nist171"],
+          "applies_to": ["rds", "s3", "dynamodb", "kms"]
+        },
+        {
+          "key": "technical-contact",
+          "description": "Email or group for operational/incident contact",
+          "allowed_values": null,
+          "applies_to": ["all"]
+        },
+        {
+          "key": "wafv2",
+          "description": "WAFv2 ruleset indicator",
+          "allowed_values": ["exclude-all", "php", "windows", "default", "none"],
+          "applies_to": ["elb", "cloudfront", "apigateway"]
+        },
+        {
+          "key": "backup",
+          "description": "Backup enabled indicator",
+          "allowed_values": ["Yes", "No"],
+          "applies_to": ["ec2", "rds", "ebs", "s3", "dynamodb", "eks", "elasticache"]
+        },
+        {
+          "key": "backup-retention",
+          "description": "Backup retention in days",
+          "allowed_values": null,
+          "applies_to": ["rds", "ebs", "dynamodb"]
+        },
+        {
+          "key": "backup-schedule",
+          "description": "Backup schedule or policy label",
+          "allowed_values": null,
+          "applies_to": ["rds", "ebs", "dynamodb"]
+        },
+        {
+          "key": "critical-list",
+          "description": "Is this system on the KSU critical list",
+          "allowed_values": ["Y", "N"],
+          "applies_to": ["ec2", "rds", "elb", "vpn"]
+        },
+        {
+          "key": "criticality",
+          "description": "DR tier classification (0=Mission Critical, 3=Non-Critical)",
+          "allowed_values": ["0 - Mission Critical", "1 - Mission Critical", "2 - Business Critical", "3 - Operational Support"],
+          "applies_to": ["ec2", "rds", "lambda", "elb", "dynamodb", "ecs", "eks", "sns", "sqs", "apigateway", "elasticache"]
+        },
+        {
+          "key": "Patch Group",
+          "description": "AWS Systems Manager patch group name",
+          "allowed_values": null,
+          "applies_to": ["ec2"]
+        },
+        {
+          "key": "os",
+          "description": "Operating system",
+          "allowed_values": ["amazon-linux", "ubuntu", "centos", "redhat", "windows2012", "windows2016", "windows2019", "windows2022"],
+          "applies_to": ["ec2"]
+        },
+        {
+          "key": "location",
+          "description": "AWS account type or deployment location",
+          "allowed_values": ["sandbox", "development", "test", "production", "shared-services", "security", "logging", "transit"],
+          "applies_to": ["ec2", "vpc", "natgateway"]
+        },
+        {
+          "key": "Scheduler",
+          "description": "Auto power-cycle schedule",
+          "allowed_values": ["ksu-lowcost", "ksu-lowcost9to6", "ksu-economy", "ksu-ignore", "ksu-workstation"],
+          "applies_to": ["ec2"]
+        },
+        {
+          "key": "maintenance-window",
+          "description": "Maintenance window for updates",
+          "allowed_values": null,
+          "applies_to": ["ec2", "rds"]
+        },
+        {
+          "key": "retention-days",
+          "description": "Log retention period in days",
+          "allowed_values": null,
+          "applies_to": ["cloudwatch"]
+        }
+      ]
+    },
+
+    "tag_aliases": {
+      "env": "environment",
+      "Env": "environment",
+      "Environment": "environment",
+      "EnvType": "environment",
+      "Customer": "customer",
+      "Department": "department",
+      "dept": "department",
+      "Dept": "department",
+      "Application": "application",
+      "app": "application",
+      "App": "application",
+      "Service": "application",
+      "technical_contact": "technical-contact",
+      "TechnicalContact": "technical-contact",
+      "tech-contact": "technical-contact",
+      "data_priority": "data-priority",
+      "DataPriority": "data-priority",
+      "service_scope": "servicescope",
+      "ServiceScope": "servicescope",
+      "service-scope": "servicescope",
+      "pillar": "servicescope",
+      "Rebill": "rebill",
+      "ReBill": "rebill",
+      "Function": "function",
+      "ServerRole": "function",
+      "Role": "function",
+      "Backup": "backup",
+      "BackupEnabled": "backup",
+      "critical_list": "critical-list",
+      "CriticalList": "critical-list",
+      "Criticality": "criticality",
+      "patch_group": "Patch Group",
+      "PatchGroup": "Patch Group",
+      "patch-group": "Patch Group",
+      "scheduler": "Scheduler",
+      "Schedule": "Scheduler",
+      "Owner": "owner",
+      "OS": "os",
+      "OperatingSystem": "os",
+      "waf-exclude": "wafv2",
+      "WAFv2": "wafv2",
+      "waf_exclude": "wafv2",
+      "MaintenanceWindow": "maintenance-window",
+      "maintenance_window": "maintenance-window",
+      "Client": "customer",
+      "data_compliance": "data-compliance",
+      "DataCompliance": "data-compliance",
+      "backup_retention": "backup-retention",
+      "BackupRetention": "backup-retention",
+      "backup_schedule": "backup-schedule",
+      "BackupSchedule": "backup-schedule"
+    }
+  }
+}
