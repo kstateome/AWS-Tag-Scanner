@@ -2,7 +2,7 @@
 
 **Comprehensive AWS resource tagging compliance scanner and remediation tool**
 
-Version 3.0 - Modular Architecture with Service-Specific Policies
+Version 3.1 - Global Tag Policy Support
 
 ---
 
@@ -1287,7 +1287,15 @@ AWS-Tag-Scanner/
 
 ## Version History
 
-### Version 3.0 (Current) - December 2025
+### Version 3.1 (Current) - January 2026
+- Added global tag policy support (tag_policy_general.json)
+- Unified tag naming to kebab-case (patch-group, technical-contact, critical-list)
+- Removed data-priority from core requirements
+- Backward compatible with service-specific policies
+- Auto-detection of policy type (global vs service-specific)
+- Required tags: customer, servicescope, department, rebill, environment, function, application, wafv2, technical-contact, backup, critical-list, criticality, patch-group
+
+### Version 3.0 - December 2025
 - Modular architecture (5 category-based scanners)
 - Selective category scanning
 - Reduced main scanner from 996 to 197 lines

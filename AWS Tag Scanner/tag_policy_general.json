@@ -1,0 +1,101 @@
+{
+  "tag_policy": {
+    "name": "AWS Global Required Tag Policy",
+    "version": "1.0",
+    "last_updated": "2026-01-23",
+    "description": "Globally enforced AWS tagging policy. All listed tags are mandatory for all taggable AWS resources. No service-specific logic or deviation handling is defined in this policy.",
+    "workstreams": ["Security", "Operations", "Landing Zone"],
+
+    "naming_conventions": {
+      "key_style": "kebab-case preferred",
+      "key_case": "case-insensitive (normalized automatically)",
+      "value_case": "freeform unless constrained by downstream tooling",
+      "max_tags_per_resource": 50,
+      "restricted_prefixes": ["aws:"],
+      "allowed_characters": "letters, numbers, spaces, and + - = . _ : / @"
+    },
+
+    "core_tags": {
+      "description": "Mandatory tags required for all AWS resources",
+      "tags": [
+        { "key": "customer", "case_sensitive": false },
+        { "key": "servicescope", "case_sensitive": false },
+        { "key": "department", "case_sensitive": false },
+        { "key": "rebill", "case_sensitive": false },
+        { "key": "environment", "case_sensitive": false },
+        { "key": "function", "case_sensitive": false },
+        { "key": "application", "case_sensitive": false },
+        { "key": "wafv2", "case_sensitive": false },
+        { "key": "technical-contact", "case_sensitive": false },
+        { "key": "backup", "case_sensitive": false },
+        { "key": "critical-list", "case_sensitive": false },
+        { "key": "criticality", "case_sensitive": false },
+        { "key": "patch-group", "case_sensitive": false }
+      ]
+    },
+
+    "all_tags_reference": {
+      "description": "Authoritative list of globally required tags",
+      "tags": [
+        { "key": "customer" },
+        { "key": "servicescope" },
+        { "key": "department" },
+        { "key": "rebill" },
+        { "key": "environment" },
+        { "key": "function" },
+        { "key": "application" },
+        { "key": "wafv2" },
+        { "key": "technical-contact" },
+        { "key": "backup" },
+        { "key": "critical-list" },
+        { "key": "criticality" },
+        { "key": "patch-group" }
+      ]
+    },
+
+    "tag_aliases": {
+      "Customer": "customer",
+      "client": "customer",
+
+      "Env": "environment",
+      "Environment": "environment",
+      "env": "environment",
+
+      "Dept": "department",
+      "Department": "department",
+
+      "ServiceScope": "servicescope",
+      "service-scope": "servicescope",
+      "service_scope": "servicescope",
+
+      "Rebill": "rebill",
+
+      "Function": "function",
+      "Role": "function",
+      "ServerRole": "function",
+
+      "App": "application",
+      "Application": "application",
+
+      "technical_contact": "technical-contact",
+      "TechnicalContact": "technical-contact",
+      "tech-contact": "technical-contact",
+
+      "Backup": "backup",
+      "BackupEnabled": "backup",
+
+      "critical_list": "critical-list",
+      "CriticalList": "critical-list",
+
+      "Criticality": "criticality",
+
+      "patch_group": "patch-group",
+      "PatchGroup": "patch-group",
+      "Patch Group": "patch-group",
+
+      "waf-exclude": "wafv2",
+      "waf_exclude": "wafv2",
+      "WAFv2": "wafv2"
+    }
+  }
+}

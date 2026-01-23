@@ -11,6 +11,8 @@ This script performs read-only operations against AWS and does not modify resour
 Perfect for use in AWS CloudShell or local environments with `boto3` installed.
 """
 
+VERSION = "3.1.0"
+
 import argparse
 import sys
 import logging

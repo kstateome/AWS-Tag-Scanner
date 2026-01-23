@@ -30,25 +30,31 @@ class ReportBuilder:
             self.load_tag_policy(policy_file)
     
     def load_tag_policy(self, policy_file: str) -> None:
-        """Load service-specific tag policy from JSON file with security validations"""
+        """Load tag policy from JSON file with security validations"""
         try:
             # Secure JSON loading with size validation
             policy_data = load_json_safely(policy_file, max_size_mb=10)
             self.tag_policy = policy_data.get('tag_policy', {})
             
-            # Validate it's a service-specific policy
-            if not self.tag_policy or 'service_specific_requirements' not in self.tag_policy:
-                self.logger.warning("Policy file doesn't contain service-specific requirements")
-                self.logger.warning("Expected 'service_specific_requirements' section")
+            # Check if it's a valid policy
+            if not self.tag_policy:
+                self.logger.warning("Policy file doesn't contain valid tag_policy section")
                 self.tag_policy = None
                 return
-            self.logger.info(f"Loaded service-specific tag policy: {self.tag_policy.get('name', 'Unknown')}")
-            services = list(self.tag_policy.get('service_specific_requirements', {}).keys())
-            self.logger.info(f"Services configured: {', '.join(services)}")
-
-            # Show core tags
-            core_tags = self.tag_policy.get('core_tags', {}).get('tags', [])
-            self.logger.info(f"Core tags (all services): {len(core_tags)}")
+            
+            # Determine policy type: global (no service_specific_requirements) or service-specific
+            is_global_policy = 'service_specific_requirements' not in self.tag_policy
+            
+            if is_global_policy:
+                self.logger.info(f"Loaded global tag policy: {self.tag_policy.get('name', 'Unknown')}")
+                core_tags = self.tag_policy.get('core_tags', {}).get('tags', [])
+                self.logger.info(f"Global required tags: {len(core_tags)}")
+            else:
+                self.logger.info(f"Loaded service-specific tag policy: {self.tag_policy.get('name', 'Unknown')}")
+                services = list(self.tag_policy.get('service_specific_requirements', {}).keys())
+                self.logger.info(f"Services configured: {', '.join(services)}")
+                core_tags = self.tag_policy.get('core_tags', {}).get('tags', [])
+                self.logger.info(f"Core tags (all services): {len(core_tags)}")
                 
         except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
             # load_json_safely may raise ValueError for invalid files/paths/sizes
@@ -100,8 +106,11 @@ class ReportBuilder:
         # Get service type for this resource
         service_type = self.get_service_type_from_resource(resource)
         
-        # Get service-specific requirements
-        service_reqs = self.tag_policy.get('service_specific_requirements', {}).get(service_type)
+        # Check if this is a global policy (no service-specific requirements)
+        is_global_policy = 'service_specific_requirements' not in self.tag_policy
+        
+        # Get service-specific requirements (if available)
+        service_reqs = None if is_global_policy else self.tag_policy.get('service_specific_requirements', {}).get(service_type)
         core_tags = self.tag_policy.get('core_tags', {}).get('tags', [])
         
         # Build required and recommended tag lists

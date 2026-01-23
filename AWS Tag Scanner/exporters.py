@@ -73,14 +73,19 @@ class ResourceExporter:
         
         comp = resource['Compliance']
         service_type = comp.get('service_type', 'other')
-        service_reqs = self.tag_policy.get('service_specific_requirements', {}).get(service_type, {})
-        core_tags = self.tag_policy.get('core_tags', {}).get('tags', [])
         
-        # Build set of tags that are valid for this service
+        # Check if this is a global policy (no service-specific requirements)
+        is_global_policy = 'service_specific_requirements' not in self.tag_policy
+        
+        core_tags = self.tag_policy.get('core_tags', {}).get('tags', [])
         service_required_tags = {tag['key'] for tag in core_tags}
-        if service_reqs:
-            service_required_tags.update(service_reqs.get('required_tags', []))
-            service_required_tags.update(service_reqs.get('recommended_tags', []))
+        
+        # Only add service-specific tags if using service-specific policy
+        if not is_global_policy:
+            service_reqs = self.tag_policy.get('service_specific_requirements', {}).get(service_type, {})
+            if service_reqs:
+                service_required_tags.update(service_reqs.get('required_tags', []))
+                service_required_tags.update(service_reqs.get('recommended_tags', []))
         
         return service_required_tags
     
@@ -210,15 +215,21 @@ class ResourceExporter:
         core_tags = self.tag_policy.get('core_tags', {}).get('tags', [])
         required = [tag['key'] for tag in core_tags]
         
-        service_reqs = self.tag_policy.get('service_specific_requirements', {}).get(service_type, {})
-        if service_reqs:
-            required.extend(service_reqs.get('required_tags', []))
+        # Only add service-specific tags if using service-specific policy
+        if 'service_specific_requirements' in self.tag_policy:
+            service_reqs = self.tag_policy.get('service_specific_requirements', {}).get(service_type, {})
+            if service_reqs:
+                required.extend(service_reqs.get('required_tags', []))
         
         return required
     
     def _get_recommended_tags_for_service(self, service_type: str) -> List[str]:
         """Get list of recommended tags for a service type"""
         if not self.tag_policy:
+            return []
+        
+        # Global policies don't have recommended tags per service
+        if 'service_specific_requirements' not in self.tag_policy:
             return []
         
         service_reqs = self.tag_policy.get('service_specific_requirements', {}).get(service_type, {})

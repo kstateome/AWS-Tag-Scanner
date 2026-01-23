@@ -164,10 +164,9 @@ class RemediationAnalyzer:
                 tag_name = key[4:]
                 tags[tag_name] = value
             # Also check if it's a known tag name directly
-            elif key in ['Name', 'customer', 'department', 'environment', 'application',
-                        'servicescope', 'rebill', 'function', 'data-priority',
-                        'technical-contact', 'wafv2', 'backup', 'critical-list',
-                        'criticality', 'Patch Group']:
+            elif key in ['customer', 'department', 'environment', 'application',
+                        'servicescope', 'rebill', 'function', 'technical-contact', 
+                        'wafv2', 'backup', 'critical-list', 'criticality', 'patch-group']:
                 tags[key] = value
         return tags
     
@@ -176,26 +175,31 @@ class RemediationAnalyzer:
         if not self.policy:
             return []
         
-        # Core tags apply to all services
-        core_tags = [tag['key'] for tag in self.policy.get('core_tags', {}).get('tags', [])]
+        # Access via tag_policy wrapper if present, otherwise direct access
+        policy_data = self.policy.get('tag_policy', self.policy)
         
-        # Service-specific required tags
-        service_reqs = self.policy.get('service_specific_requirements', {}).get(service_type, {})
-        service_tags = service_reqs.get('required_tags', [])
+        # Core tags apply to all services (global policy)
+        core_tags = [tag['key'] for tag in policy_data.get('core_tags', {}).get('tags', [])]
         
-        return core_tags + service_tags
+        # Only add service-specific tags if using service-specific policy
+        if 'service_specific_requirements' in policy_data:
+            service_reqs = policy_data.get('service_specific_requirements', {}).get(service_type, {})
+            service_tags = service_reqs.get('required_tags', [])
+            return core_tags + service_tags
+        
+        return core_tags
     
     def _calculate_missing_tags(self, tags: Dict, service_type: str = None) -> Set[str]:
         """Calculate which required tags are missing"""
         if self.policy and service_type:
             required = set(self._get_required_tags_for_service(service_type))
         else:
-            # Fallback to common tags if no policy
+            # Fallback to general policy tags if no policy provided
             required = {
-                'Name', 'customer', 'department', 'environment', 'application',
-                'servicescope', 'rebill', 'function', 'data-priority',
-                'technical-contact', 'wafv2', 'backup', 'critical-list',
-                'criticality', 'Patch Group'
+                'customer', 'servicescope', 'department', 'rebill',
+                'environment', 'function', 'application', 'wafv2',
+                'technical-contact', 'backup', 'critical-list',
+                'criticality', 'patch-group'
             }
         
         existing = set(k for k, v in tags.items() if v)
@@ -231,17 +235,6 @@ class RemediationAnalyzer:
                 rec['value'] = 'N'
                 rec['logic'] = 'Default: No chargeback (change if MOA exists)'
             
-            elif missing_tag == 'data-priority':
-                if function in ['db', 'database']:
-                    rec['value'] = 'pii'
-                    rec['logic'] = 'Database → PII (verify classification)'
-                elif environment == 'prod':
-                    rec['value'] = 'non-sensitive'
-                    rec['logic'] = 'Production → non-sensitive (verify)'
-                else:
-                    rec['value'] = 'non-sensitive'
-                    rec['logic'] = 'Default: non-sensitive'
-            
             elif missing_tag == 'wafv2':
                 if function == 'web':
                     rec['value'] = 'default'
@@ -275,7 +268,7 @@ class RemediationAnalyzer:
                     rec['value'] = '3 - Operational Support'
                     rec['logic'] = 'Default: Operational Support'
             
-            elif missing_tag == 'Patch Group':
+            elif missing_tag == 'patch-group':
                 if environment in ['prod', 'test', 'dev']:
                     rec['value'] = environment
                     rec['logic'] = 'Copied from environment tag'
